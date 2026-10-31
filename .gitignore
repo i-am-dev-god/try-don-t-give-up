@@ -1,0 +1,6 @@
+node_modules/
+video/node_modules/
+video/out/video-silent.mp4
+video/out/voice.wav
+video/out/still-*.png
+.DS_Store

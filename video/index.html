@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NO CAMERA — an explainer made of math</title>
+    <style>
+      :root {
+        --ink: #f3f4fb;
+        --dim: #7b7f96;
+        --violet: #8b6bff;
+        --cyan: #3fe0e6;
+        --bg: #05060b;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: radial-gradient(60% 60% at 30% 20%, #12122a 0%, #05060b 70%);
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        overflow: hidden;
+      }
+      #app {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 18px;
+      }
+      #stage {
+        position: relative;
+        width: min(100%, 1600px);
+        aspect-ratio: 16 / 9;
+        max-height: calc(100vh - 130px);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #05060b;
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+        cursor: pointer;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      #overlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(50% 50% at 50% 50%, rgba(5, 6, 11, 0.35), rgba(5, 6, 11, 0.72));
+        transition: opacity 0.35s ease;
+      }
+      #overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .playbtn {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 28px 16px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(10px);
+        font: 600 17px/1 inherit;
+        color: var(--ink);
+        cursor: pointer;
+        letter-spacing: 0.02em;
+      }
+      .playbtn svg { width: 26px; height: 26px; }
+      .playbtn small {
+        color: var(--dim);
+        font-weight: 400;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 11px;
+      }
+      #bar {
+        width: min(100%, 1600px);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-variant-numeric: tabular-nums;
+        color: var(--dim);
+        font-size: 13px;
+      }
+      #bar button {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--ink);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        flex: none;
+      }
+      #bar button:hover { background: rgba(255, 255, 255, 0.1); }
+      #scrub {
+        flex: 1;
+        appearance: none;
+        height: 4px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.14);
+        outline: none;
+        cursor: pointer;
+      }
+      #scrub::-webkit-slider-thumb {
+        appearance: none;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 12px 0 rgba(63, 224, 230, 0.7);
+      }
+      #scrub::-moz-range-thumb {
+        width: 13px;
+        height: 13px;
+        border: none;
+        border-radius: 50%;
+        background: var(--cyan);
+      }
+      #note {
+        color: #4b4f63;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+      }
+      #note b { color: #8b90a8; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage">
+        <canvas id="film" width="1920" height="1080"></canvas>
+        <div id="overlay">
+          <button class="playbtn" id="bigplay">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="rgba(255,255,255,0.35)"/><path d="M10 8.5l6 3.5-6 3.5z" fill="#fff"/></svg>
+            <span>Play the film <small>0:50 · sound on</small></span>
+          </button>
+        </div>
+      </div>
+
+      <div id="bar">
+        <button id="play" aria-label="Play / pause">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <span id="cur">0:00</span>
+        <input id="scrub" type="range" min="0" max="50.23" step="0.01" value="0" />
+        <span id="dur">0:50</span>
+        <button id="mute" aria-label="Mute">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-1.5-3.35v6.7A4.5 4.5 0 0 0 16.5 12z"/></svg>
+        </button>
+      </div>
+
+      <div id="note">
+        every frame is <b>src/anim.js</b> — canvas 2d, 1,507 frames, no footage. space = play/pause, ← → = seek
+      </div>
+    </div>
+
+    <script type="module">
+      import { W, H, FPS, TOTAL, STARTS, DURATIONS, init, drawFrame } from './src/anim.js';
+
+      // Register the film's fonts under the same family aliases anim.js expects.
+      const FONTS = [
+        ['SpaceGrotesk-Bold.ttf', 'SG'],
+        ['SpaceGrotesk-Medium.ttf', 'SGM'],
+        ['Inter-Regular.ttf', 'Inter'],
+        ['Inter-SemiBold.ttf', 'InterSB'],
+        ['Inter-Bold.ttf', 'InterB'],
+        ['JetBrainsMono-Regular.ttf', 'Mono'],
+        ['JetBrainsMono-Medium.ttf', 'MonoM'],
+      ];
+
+      const canvas = document.getElementById('film');
+      const ctx = canvas.getContext('2d');
+      const stage = document.getElementById('stage');
+      const overlay = document.getElementById('overlay');
+      const scrub = document.getElementById('scrub');
+      const cur = document.getElementById('cur');
+      const btn = document.getElementById('play');
+      document.getElementById('dur').textContent = fmt(TOTAL);
+      scrub.max = TOTAL;
+
+      // narration
+      const clips = DURATIONS.map((_, i) => {
+        const a = new Audio(`./audio/vo-0${i + 1}.mp3`);
+        a.preload = 'auto';
+        return a;
+      });
+      let muted = false;
+
+      let t = 0; // film time, seconds
+      let playing = false;
+      let wall = 0; // performance.now() when playback started
+      let baseT = 0;
+      let started = false;
+
+      function fmt(s) {
+        return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+      }
+
+      function syncAudio() {
+        clips.forEach((a, i) => {
+          const s = STARTS[i];
+          const d = DURATIONS[i];
+          if (playing && t >= s && t < s + d) {
+            const want = t - s;
+            if (a.paused) {
+              a.currentTime = Math.min(want, d - 0.05);
+              a.play().catch(() => {});
+            } else if (Math.abs(a.currentTime - want) > 0.3) {
+              a.currentTime = want;
+            }
+          } else if (!a.paused) {
+            a.pause();
+          }
+          a.muted = muted;
+        });
+      }
+
+      function pauseAll() {
+        clips.forEach((a) => a.pause());
+      }
+
+      function setPlaying(p) {
+        playing = p;
+        if (p) {
+          started = true;
+          overlay.classList.add('hidden');
+          baseT = t >= TOTAL - 0.05 ? 0 : t;
+          wall = performance.now();
+          if (t >= TOTAL - 0.05) t = 0;
+        } else {
+          pauseAll();
+        }
+        btn.innerHTML = p
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+      }
+
+      function seek(nt) {
+        t = Math.max(0, Math.min(TOTAL - 0.02, nt));
+        baseT = t;
+        wall = performance.now();
+        pauseAll();
+        if (playing) syncAudio();
+        draw();
+      }
+
+      stage.addEventListener('click', () => setPlaying(!playing));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setPlaying(!playing);
+      });
+      document.getElementById('bigplay').addEventListener('click', (e) => {
+        e.stopPropagation();
+        setPlaying(true);
+      });
+      document.getElementById('mute').addEventListener('click', (e) => {
+        e.stopPropagation();
+        muted = !muted;
+        syncAudio();
+      });
+      scrub.addEventListener('input', (e) => seek(parseFloat(e.target.value)));
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          setPlaying(!playing);
+        }
+        if (e.code === 'ArrowRight') seek(t + 5);
+        if (e.code === 'ArrowLeft') seek(t - 5);
+      });
+
+      function draw() {
+        drawFrame(ctx, t);
+        scrub.value = String(t);
+        cur.textContent = fmt(t);
+      }
+
+      let lastDraw = 0;
+      function loop(now) {
+        if (playing) {
+          t = baseT + (now - wall) / 1000;
+          if (t >= TOTAL) {
+            t = TOTAL;
+            setPlaying(false);
+          }
+          syncAudio();
+        }
+        const step = 1000 / FPS;
+        if (now - lastDraw >= step - 1) {
+          lastDraw = now;
+          draw();
+        }
+        requestAnimationFrame(loop);
+      }
+
+      async function boot() {
+        await Promise.all(
+          FONTS.map(async ([file, alias]) => {
+            const face = new FontFace(alias, `url(./fonts/${file})`);
+            await face.load();
+            document.fonts.add(face);
+          })
+        );
+        init(ctx, (w, h) => {
+          const c = document.createElement('canvas');
+          c.width = w;
+          c.height = h;
+          return c;
+        });
+        draw();
+        requestAnimationFrame(loop);
+      }
+      boot();
+    </script>
+  </body>
+</html>

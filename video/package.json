@@ -1,0 +1,14 @@
+{
+  "name": "no-camera",
+  "private": true,
+  "type": "module",
+  "description": "An explainer where every frame is math. Canvas 2D -> frames -> ffmpeg.",
+  "scripts": {
+    "render": "node src/render.mjs",
+    "build": "bash build.sh",
+    "preview": "python3 -m http.server 4173"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.80"
+  }
+}
