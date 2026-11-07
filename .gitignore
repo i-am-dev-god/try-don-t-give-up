@@ -1,0 +1,11 @@
+# Python / render env
+.venv/
+__pycache__/
+*.pyc
+
+# Render output: video lives in git, frame sequences do not
+render/frames/
+*.blend1
+
+# Local scratch
+/tmp/
