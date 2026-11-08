@@ -43,7 +43,7 @@ encode() {
     -movflags +faststart "$OUT/meadow-1x1.mp4"
 
   # poster frame from the master
-  "$ff" -y -i "$FRAMES/f_0180.png" -vf "noise=alls=4:allf=t+u" "$OUT/meadow-poster.png"
+  "$ff" -y -i "$FRAMES/f_0180.png" -vf "noise=alls=4:allf=t+u" -frames:v 1 -update 1 "$OUT/meadow-poster.png"
 
   ls -lh "$OUT"/meadow-*
 }
