@@ -9,3 +9,6 @@ render/frames/
 
 # Local scratch
 /tmp/
+
+# Meadow render outputs are large: only the deliverables are tracked
+/tmp/meadow_frames/
