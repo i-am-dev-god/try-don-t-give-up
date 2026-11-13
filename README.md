@@ -60,3 +60,18 @@ lands around a minute per frame.
 | `tools/render.sh` | Preview / render / encode pipeline |
 | `forest.py` | Earlier interior-forest experiment (kept for reference) |
 | `render/mist-valley.mp4` | The finished shot |
+
+---
+
+## Also in this repo
+
+### Can you build AI models from scratch? (`from_scratch/`)
+
+An autograd engine, a transformer, a stock-market analyser and an honest
+backtest — all in NumPy, no ML frameworks. [Read it here](from_scratch/README.md).
+
+```bash
+./tools/setup_scratch.sh
+.venv/bin/python from_scratch/check_grad.py    # gradient checks on every op and model
+.venv/bin/python from_scratch/finance.py       # 4 models vs the theoretical ceiling
+```
